@@ -182,19 +182,69 @@ class YelpScraper:
         yelp_review_url_raw_data = ""
 
         try:
-            WebDriverWait(self.driver, 10).until(
+            element = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, 'a[jsname="UWckNb"]')
                 )
             )
+            yelp_review_url = element.get_attribute('href')
         except TimeoutException:
             print(
                 f"No review card found for {company_name.replace('+', ' ')} within the timeout period.")
+            
+        if "yelp.com" not in yelp_review_url:
+            return ""
 
-            return yelp_review_url, yelp_review_url_raw_data
+        return yelp_review_url
+    
+    def get_yelp_data(self, yelp_review_url):
+        """
+        Fetch Yelp review rating and number of reviews from the review URL.
+        """
 
-        # Similar methods to GoogleScraper but tailored for Yelp
+        if not yelp_review_url:
+            return "", "", ""
 
+        yelp_review_url_raw_data = ""
+        yelp_review_rating = ""
+        yelp_reviews_number = ""
+
+        self.driver.get(yelp_review_url)
+
+        try:
+            raw_data = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.CLASS_NAME, 'm_flex-1')
+                )
+            )
+            yelp_review_url_raw_data = raw_data.text
+
+            rating_tag = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, 'span.y-css-1o34y7f')
+                )
+            )
+            yelp_review_rating = rating_tag.text if rating_tag else None
+
+            reviews_tag = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, 'a.y-css-12ly5yx')
+                )
+            )
+            reviews_text = reviews_tag.text if reviews_tag else None
+
+            if reviews_text:
+                yelp_reviews_number = reviews_text.split()[0].strip("()")
+            else:
+                yelp_reviews_number = ""
+
+        except TimeoutException:
+            print(
+                f"Timeout while fetching review details from {yelp_review_url}.")
+            return yelp_review_url_raw_data, yelp_review_rating, yelp_reviews_number
+
+        return yelp_review_url_raw_data, yelp_review_rating, yelp_reviews_number
+        
 
 class ThumbtackScraper:
     """
