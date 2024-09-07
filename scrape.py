@@ -214,7 +214,7 @@ class YelpScraper:
         try:
             raw_data = WebDriverWait(self.driver, 10).until(
                 EC.presence_of_element_located(
-                    (By.CLASS_NAME, 'm_flex-1')
+                    (By.CLASS_NAME, 'y-css-1isopps')
                 )
             )
             yelp_review_url_raw_data = raw_data.text
@@ -355,7 +355,10 @@ class ReviewScraper:
                     google_review_url)
 
                 # Yelp
-                # yelp_review_url, yelp_review_url_raw_data, yelp_review_rating, yelp_reviews_number = self.yelp_scraper.scrape_yelp(company_name)
+                yelp_review_url = self.yelp_scraper.search_yelp_google(
+                    company_name.replace(' ', '+'))
+                yelp_review_url_raw_data, yelp_review_rating, yelp_reviews_number = self.yelp_scraper.get_yelp_data(
+                    yelp_review_url)
 
                 # Thumbtack
                 thumbtack_review_url = self.thumbtack_scraper.search_thumbtack_google(
@@ -367,6 +370,11 @@ class ReviewScraper:
                 row['google_review_url_raw_data'] = google_review_url_raw_data
                 row['google_review_rating'] = google_review_rating
                 row['google_reviews_number'] = google_reviews_number
+
+                row['yelp_review_url'] = yelp_review_url
+                row['yelp_review_url_raw_data'] = yelp_review_url_raw_data
+                row['yelp_review_rating'] = yelp_review_rating
+                row['yelp_reviews_number'] = yelp_reviews_number
 
                 row['thumbtack_review_url'] = thumbtack_review_url
                 row['thumbtack_review_url_raw_data'] = thumbtack_review_url_raw_data
