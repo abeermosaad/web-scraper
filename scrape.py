@@ -76,7 +76,7 @@ class GoogleScraper:
                 )
             except TimeoutException:
                 print(
-                    f"No review card found for {company_name.replace('+', ' ')} within the timeout period.")
+                    f"GoogleScraper: No review card found for {company_name.replace('+', ' ')} within the timeout period.")
 
                 return google_review_url, google_review_url_raw_data
 
@@ -197,10 +197,88 @@ class YelpScraper:
 
 
 class ThumbtackScraper:
+    """
+    A class to scrape Thumbtack reviews.
+    """
+
     def __init__(self, driver):
         self.driver = driver
 
-    # Similar methods to GoogleScraper but tailored for Thumbtack
+    def search_thumbtack_google(self, company_name):
+        """
+        Search Thumbtack on Google and extract the Thumbtack URL.
+        """
+
+        search_url = f"https://www.google.com/search?q={company_name}+Thumbtack&hl=en"
+        self.driver.get(search_url)
+
+        thumbtack_review_url = ""
+
+        try:
+            element = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, 'a[jsname="UWckNb"]')
+                )
+            )
+            thumbtack_review_url = element.get_attribute('href')
+        except TimeoutException:
+            print(
+                f"ThumbtackScraper: No review card found for {company_name.replace('+', ' ')} within the timeout period in.")
+
+        if 'www.thumbtack.com' not in thumbtack_review_url:
+            return ""
+
+        return thumbtack_review_url
+
+    def fetch_review_details(self, thumbtack_review_url):
+        """
+        Fetch Thumbtack review rating and number of reviews from the review URL.
+        """
+
+        if not thumbtack_review_url:
+            return "", "", ""
+
+        thumbtack_review_url_raw_data = ""
+        thumbtack_review_rating = ""
+        thumbtack_reviews_number = ""
+
+        self.driver.get(thumbtack_review_url)
+
+        try:
+            raw_data = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.CLASS_NAME, 'm_flex-1')
+                )
+            )
+            thumbtack_review_url_raw_data = raw_data.text
+
+            element = WebDriverWait(self.driver, 10).until(
+                EC.presence_of_element_located(
+                    (
+                        By.CSS_SELECTOR,
+                        'section#ServicePageHeaderSection'
+                    )
+                )
+            )
+
+            rating_elements_text = element.find_element(
+                By.CSS_SELECTOR,
+                '.hideAtOrBelow320px'
+            ).text.split(' ')
+
+            if rating_elements_text:
+                if len(rating_elements_text) >= 2:
+                    rating_parts = rating_elements_text[1].split('\n')
+                    if len(rating_parts) >= 2:
+                        thumbtack_review_rating = rating_parts[0].strip()
+                        thumbtack_reviews_number = rating_parts[1].strip('()')
+
+        except TimeoutException:
+            print(
+                f"Timeout while fetching review details from {thumbtack_review_url}.")
+            return thumbtack_review_url_raw_data, thumbtack_review_rating, thumbtack_reviews_number
+
+        return thumbtack_review_url_raw_data, thumbtack_review_rating, thumbtack_reviews_number
 
 
 class ReviewScraper:
@@ -230,15 +308,20 @@ class ReviewScraper:
                 # yelp_review_url, yelp_review_url_raw_data, yelp_review_rating, yelp_reviews_number = self.yelp_scraper.scrape_yelp(company_name)
 
                 # Thumbtack
-                # thumbtack_review_url, thumbtack_review_url_raw_data, thumbtack_review_rating, thumbtack_reviews_number = self.thumbtack_scraper.scrape_thumbtack(company_name)
+                thumbtack_review_url = self.thumbtack_scraper.search_thumbtack_google(
+                    company_name.replace(' ', '+'))
+                thumbtack_review_url_raw_data, thumbtack_review_rating, thumbtack_reviews_number = self.thumbtack_scraper.fetch_review_details(
+                    thumbtack_review_url)
 
-                # Update the row with scraped data
                 row['google_review_url'] = google_review_url
                 row['google_review_url_raw_data'] = google_review_url_raw_data
                 row['google_review_rating'] = google_review_rating
                 row['google_reviews_number'] = google_reviews_number
 
-                # Add similar assignments for Yelp and Thumbtack fields
+                row['thumbtack_review_url'] = thumbtack_review_url
+                row['thumbtack_review_url_raw_data'] = thumbtack_review_url_raw_data
+                row['thumbtack_review_rating'] = thumbtack_review_rating
+                row['thumbtack_reviews_number'] = thumbtack_reviews_number
 
                 rows.append(row)
 
