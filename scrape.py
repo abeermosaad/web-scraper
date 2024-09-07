@@ -191,12 +191,12 @@ class YelpScraper:
         except TimeoutException:
             print(
                 f"No review card found for {company_name.replace('+', ' ')} within the timeout period.")
-            
+
         if "yelp.com" not in yelp_review_url:
             return ""
 
         return yelp_review_url
-    
+
     def get_yelp_data(self, yelp_review_url):
         """
         Fetch Yelp review rating and number of reviews from the review URL.
@@ -244,7 +244,7 @@ class YelpScraper:
             return yelp_review_url_raw_data, yelp_review_rating, yelp_reviews_number
 
         return yelp_review_url_raw_data, yelp_review_rating, yelp_reviews_number
-        
+
 
 class ThumbtackScraper:
     """
