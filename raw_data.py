@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import pandas as pd
 
 def fetch_text_data(url):
     headers = {
@@ -19,12 +20,20 @@ def fetch_text_data(url):
     except requests.exceptions.RequestException as e:
         return f"Error: {e}"
 
+def process_csv(input_csv):
+    df = pd.read_csv(input_csv)
+
+    if 'company_url' not in df.columns:
+        print("Error: 'company_url' column not found in CSV")
+        return
+
+    df['company_url_raw_data'] = df['company_url'].apply(lambda url: fetch_text_data(url) if pd.notna(url) else "No URL")
+
+    df.to_csv(input_csv, index=False)
+    print(f"Raw data has been updated and saved in {input_csv}")
+
 if __name__ == "__main__":
-    url = "https://westacklandscaping.com/"
+    input_csv = "output.csv"  
     
-    text_data = fetch_text_data(url)
-    
-    with open("output.txt", "w", encoding="utf-8") as file:
-        file.write(text_data)
-    
-    print("The extracted text has been saved as 'output.txt'.")
+    process_csv(input_csv)
+ 
